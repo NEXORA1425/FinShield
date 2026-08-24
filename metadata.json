@@ -1,0 +1,8 @@
+{
+  "name": "FinShield",
+  "description": "AI-powered financial education, budgeting and safety awareness for everyone.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

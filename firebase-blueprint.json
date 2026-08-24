@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User profile with settings and risk preferences",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLoginAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email"]
+    },
+    "SavedScan": {
+      "title": "Saved Risk Scan",
+      "description": "Risk scan history saved by the user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "snippet": { "type": "string" },
+        "riskLevel": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "explanation": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "snippet", "riskLevel", "createdAt"]
+    },
+    "SavedBudget": {
+      "title": "Saved Budget",
+      "description": "Saved budget history and AI summary",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "income": { "type": "number" },
+        "totalExpenses": { "type": "number" },
+        "remainingBalance": { "type": "number" },
+        "summary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "income", "totalExpenses", "remainingBalance", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "UserProfile",
+      "description": "User documents keyed by uid"
+    },
+    "users/{userId}/scans": {
+      "schema": "SavedScan",
+      "description": "User's scanned messages"
+    },
+    "users/{userId}/budgets": {
+      "schema": "SavedBudget",
+      "description": "User's saved budgets"
+    }
+  }
+}
