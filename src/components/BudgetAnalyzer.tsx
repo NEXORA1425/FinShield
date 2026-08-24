@@ -22,6 +22,7 @@ import {
   Legend
 } from 'recharts';
 import { BudgetInputs, BudgetAnalysisResult } from '../types';
+import { getClientBudgetFallback } from '../lib/clientFallback';
 
 export const BudgetAnalyzer: React.FC = () => {
   // Preloaded with realistic initial default values
@@ -114,24 +115,30 @@ export const BudgetAnalyzer: React.FC = () => {
     setError(null);
 
     try {
-      const res = await fetch('/api/analyze-budget', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          income: inputs.income,
-          expenses: inputs.expenses,
-          totalExpenses: calculations.totalExpenses,
-          remainingBalance: calculations.remainingBalance,
-          percentages: calculations.percentages,
-        }),
-      });
+      let data: BudgetAnalysisResult;
+      try {
+        const res = await fetch('/api/analyze-budget', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            income: inputs.income,
+            expenses: inputs.expenses,
+            totalExpenses: calculations.totalExpenses,
+            remainingBalance: calculations.remainingBalance,
+            percentages: calculations.percentages,
+          }),
+        });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Server responded with status ${res.status}`);
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          data = getClientBudgetFallback(inputs);
+        }
+      } catch (fetchErr) {
+        data = getClientBudgetFallback(inputs);
       }
 
-      const data: BudgetAnalysisResult = await res.json();
       setAiResult(data);
     } catch (err: any) {
       console.error('Error analyzing budget:', err);

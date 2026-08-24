@@ -19,6 +19,7 @@ import {
 import { RiskAnalysisResult, RiskLevel } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { db, collection, addDoc, serverTimestamp } from '../lib/firebase';
+import { getClientRiskFallback } from '../lib/clientFallback';
 
 interface RiskAnalyzerProps {
   onOpenAuth?: (mode?: 'signin' | 'signup') => void;
@@ -72,18 +73,24 @@ export const RiskAnalyzer: React.FC<RiskAnalyzerProps> = ({ onOpenAuth }) => {
     setSavedToCloud(false);
 
     try {
-      const response = await fetch('/api/analyze-risk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: textToAnalyze.trim() }),
-      });
+      let data: RiskAnalysisResult;
+      try {
+        const response = await fetch('/api/analyze-risk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: textToAnalyze.trim() }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Something went wrong while analyzing this message.');
+        const contentType = response.headers.get('content-type') || '';
+        if (response.ok && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          data = getClientRiskFallback(textToAnalyze.trim());
+        }
+      } catch (fetchErr) {
+        data = getClientRiskFallback(textToAnalyze.trim());
       }
 
-      const data: RiskAnalysisResult = await response.json();
       setResult(data);
 
       // Auto-save to Firestore if user is authenticated

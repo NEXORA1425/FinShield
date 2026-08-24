@@ -15,6 +15,7 @@ import {
   Check
 } from 'lucide-react';
 import { ExplainerLanguage, ExplainerResult } from '../types';
+import { getClientExplainerFallback } from '../lib/clientFallback';
 
 export const FinancialExplainer: React.FC = () => {
   const [query, setQuery] = useState<string>('What is compound interest?');
@@ -45,21 +46,27 @@ export const FinancialExplainer: React.FC = () => {
     setError(null);
 
     try {
-      const res = await fetch('/api/explain-finance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: textToAsk.trim(),
-          language: langToUse === 'hi' ? 'Hindi' : 'English',
-        }),
-      });
+      let data: ExplainerResult;
+      try {
+        const res = await fetch('/api/explain-finance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: textToAsk.trim(),
+            language: langToUse === 'hi' ? 'Hindi' : 'English',
+          }),
+        });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with status ${res.status}`);
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          data = getClientExplainerFallback(textToAsk.trim(), langToUse);
+        }
+      } catch (fetchErr) {
+        data = getClientExplainerFallback(textToAsk.trim(), langToUse);
       }
 
-      const data: ExplainerResult = await res.json();
       setResult(data);
     } catch (err: any) {
       console.error('Error explaining finance:', err);
