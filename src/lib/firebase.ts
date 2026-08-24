@@ -23,10 +23,21 @@ import {
   getDocs, 
   serverTimestamp 
 } from 'firebase/firestore';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase App
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+// Initialize Analytics safely in browser environments
+export let analytics: ReturnType<typeof getAnalytics> | null = null;
+if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  }).catch(() => {});
+}
 
 // Initialize Auth & Firestore with specific databaseId if configured
 export const auth = getAuth(app);
